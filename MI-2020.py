@@ -10,7 +10,11 @@ Created on Thu Sep 24 09:48:10 2020
 import time
 import threading
 import sys
-#import winsound
+import winsound
+from playsound import playsound
+import keyboard
+
+
 # Replace RPG starter project with this code when new instructions are live
 def typewriter(message,delay=0.01):
     for character in message:
@@ -38,16 +42,22 @@ Intelligence Report says that Subash Residence is being used by Terrorist as the
                                open [item]
                                shoot [item]
 ''')
+    winsound.PlaySound('typewriter.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
     typewriter(header_message, 0.02)
     time.sleep(1)
+    winsound.PlaySound('typewriter.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
     typewriter(objective_message, 0.02)
+    winsound.PlaySound(None, winsound.SND_ASYNC)
     time.sleep(2)
+    winsound.PlaySound('typewriter.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
     typewriter(command_message, 0.02)
     time.sleep(2)
+    winsound.PlaySound(None, winsound.SND_ASYNC)
     print('''                               
                                 Goodluck !!''')
     time.sleep(1)
     print('')
+    winsound.PlaySound('mi-beat', winsound.SND_ASYNC | winsound.SND_LOOP)
     
 def showStatus(number_of_lives, number_of_moves, currentRoom, inventory):
     #print the player's current status
@@ -100,7 +110,7 @@ rooms = {
                               'hostile': False
                               },
                           'south door': {
-                              'content': '2 Hajis pointing RPG at you. You just got shot',
+                              'content': '2 Hajis pointing m16s at you.',
                               'impact':'1',
                               'opened':False,
                               'grabbable':False,
@@ -113,7 +123,7 @@ rooms = {
                           },
                       'mystery box': {
                           'medical kit':{
-                              'grabbable': False
+                              'grabbable': True
                               }, 
                           'm4': {
                               'grabbable': True
@@ -135,7 +145,55 @@ rooms = {
             'Dining Room' : {
                   'west' : 'Hall',
                   'south': 'Garden',
-                  'item'  : {'torch':'', 'comb':'','mystery box': {'1':'m16', '2':'flash bang', '3':'smoke', 'opened': False}},
+                  'item'  : {
+                      'step ladder': {
+                          'grabbable': True,
+                          'grabbed': False
+                          }, 
+                      'door':{
+                          'east attic door': {
+                              'content': 'a Python living up there. You got bitten',
+                              'impact' : '1',
+                              'opened': False,
+                              'grabbable': False,
+                              'dependency': 'step ladder',
+                              'hostile' : 'True'
+                              },
+                          'west attic door': {
+                              'content':'explosives. Got triggered and exploded',
+                              'impact':'3',
+                              'opened': False,
+                              'grabbable': False,
+                              'dependency': 'step ladder',
+                              'hostile': False
+                              },
+                          'book': {
+                              'content': 'passcode',
+                              'impact':'0',
+                              'opened':False,
+                              'grabbable':False,
+                              'dependency': 'passcode',
+                              'hostile': False
+                              },
+                          'opened': False,
+                          'impact': '0',
+                          'grabbable' :'False'
+                          },
+                      'mystery box': {
+                          'C4':{
+                              'grabbable': True
+                              }, 
+                          'flash bang':{
+                              'grabbable': True
+                              }, 
+                          'smoke': {
+                              'grabbable': True
+                              }, 
+                          'opened': False,
+                          'impact': '0',
+                          'grabbable' : False
+                          }
+                      },
                   'north' : 'Pantry',
                },
             'Garden' : {
@@ -147,16 +205,18 @@ rooms = {
                   'item' : {'cookie dough':'', 'raw noodles':'', 'expired chips':'','opened': False},
             }
          }
-
-def shootHostile():
-    print('You got shot again. The RPG blew up !!')
+timer_off = False
+def hostileAttack():
+    print('You just got shot....Focus !!')
+    global timer_off
+    timer_off = True
     
-timer = threading.Timer(3.0, shootHostile) 
+timer = threading.Timer(5.0, hostileAttack) 
 
 #open objects and prints the content
 def openIt(currentRoom, elem, inventory, number_of_lives):
     items = rooms[currentRoom]['item']
-    N = 3
+    N = -3
 
     if elem in items and elem == 'mystery box':
         visibleItems = list(rooms[currentRoom]['item']['mystery box'].keys())[0:N]
@@ -181,7 +241,7 @@ def openIt(currentRoom, elem, inventory, number_of_lives):
             
             return 0
         else:
-            print("Choose door1, door2 or door3..")
+            print("Choose east door, west door or south door..")
             return 0
     elif items['door']['opened'] == True and elem in items['door'].keys():
         visibleItems = list(items['door'].keys())[0:N]
@@ -192,10 +252,25 @@ def openIt(currentRoom, elem, inventory, number_of_lives):
                 print("You found " + str(items['door'][elem]['content']))
                 if items['door'][elem]['content'] == 'passcode':
                     inventory += [items['door'][elem]['content']]
+                    return 0
                 if items['door'][elem]['hostile'] == True:
                     print('shoot, shoot !!')
                     timer.start()
-                return items['door'][elem]['impact']
+                    action = input("Type shoot to shoot >> ")
+                    if timer_off == True:
+                        return items['door'][elem]['impact']
+                    elif action == 'shoot' and timer_off==False:
+                        if 'm4' in inventory:
+                            timer.cancel()
+                            print('Threats elimininated.. Great Work')
+                            return 0
+                        else:
+                            return items['door'][elem]['impact']
+                    else:
+                        print("Unlucky day")
+                        return items['door'][elem]['impact']
+                else:
+                    return items['door'][elem]['impact']
             else:
                 print('Personal inventory missing tool')
                 return items['door']['impact']
@@ -248,6 +323,7 @@ def get(currentRoom, elem, inventory):
         #tell them they can't get it
         print('Are you out of your mind?')
         
+
 def main():
     #start the player in the Hall
     currentRoom = 'Hall'
@@ -269,6 +345,7 @@ def main():
             print("Terrorists have discovered your movements. Hostages are killed and you are fired..!! ")
             break
         if number_of_lives <= 0:
+            winsound.PlaySound(None, winsound.SND_ASYNC)
             print("Mission failed...")
             break
         number_of_moves +=1
@@ -279,7 +356,11 @@ def main():
         move = ''
         while move == '':
             move = input('Make the Next Move >> ')
-        print("-------------------------------------")
+        if move == 'q':
+            winsound.PlaySound(None, winsound.SND_ASYNC)
+            print('You are fired.. Loser!')
+            break
+        print("------------------------------------------")
         # split allows an items to have a space on them
         # get golden key is returned ["get", "golden key"]          
         move = move.lower().split(" ", 1)
@@ -307,12 +388,17 @@ def main():
             #detect_hostile = dict()
             #index = 0
             #size = len(rooms[currentRoom]['item']['door'])
-            
-                if impact > 0:
+            if 'm4' not in inventory:
+                print('No weapon available..')
+            elif impact > 0:
+                print(impact)
+                if timer_off==False:
                     timer.cancel()
                     print("Nicely Done !!")
                 else:
-                    print("Have you lost your mind")
+                    number_of_lives -=1
+            else:
+                print("Have you lost your mind ?!!")
         ## Define how a player can win
         if currentRoom == 'Garden' and 'key' in inventory and 'potion' in inventory:
             print('You escaped the house with the ultra rare key and magic potion... YOU WIN!')
@@ -330,4 +416,5 @@ def main():
             break
 
 if __name__ == '__main__': 
-    main() 
+    main()
+    winsound.PlaySound(None, winsound.SND_PURGE)
