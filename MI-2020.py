@@ -8,12 +8,144 @@ Created on Thu Sep 24 09:48:10 2020
 #!/usr/bin/python3
 
 import time
+import datetime
 import threading
-import sys
+import requests
+import random
+#import sys
 import winsound
-from playsound import playsound
-import keyboard
+#from playsound import playsound
+#import keyboard
 
+def openWormHole():
+    
+    ## Define NEOW URL 
+    NEOURL = "https://api.nasa.gov/neo/rest/v1/feed?"
+    with open('C:/Users/sanju/Documents/TLG_python/mycode/nasa-creds.txt') as mycreds:
+        nasacreds = mycreds.read()
+        nasacreds = "api_key="+nasacreds.strip("\n")
+        
+        #randomly generate date
+        date = generate_date()
+        startdate = f"start_date={date}"
+        neowrequest = requests.get(NEOURL + startdate + "&" + nasacreds).json()
+        #print(neowrequest)
+        
+    message ='''
+Oh no!! You opened a wormhole and you got sucked into it . . . . 
+You are as of now sitting back and relaxing . . . .
+In front of you, you see a big ball . . . .
+It is planet earth . . . .
+You are on Mars . . . .
+'''
+    instruction =f'''
+Today's date: {date} . . . .
+Looks like you have travelled back in time . . . .
+Some asteroids are headed towards Feeser Residence . . . .
+Only way to travel back in future is to destroy all the asteroids . . . .
+Choose and shoot wisely . . . .
+        '''
+    commands = '''
+                        You will be using these commands 
+                            to destroy the asteroids
+                       ================================
+                               load [asteroid]
+                        shoot [v-150 Planet Defender]
+
+                               
+                                Goodluck !!
+        '''
+    winsound.PlaySound('typewriter.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+    typewriter(message, 0.02)
+    winsound.PlaySound(None, winsound.SND_ASYNC)
+    time.sleep(3)
+    winsound.PlaySound('typewriter.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+    typewriter(instruction, 0.02)
+    winsound.PlaySound(None, winsound.SND_ASYNC)
+    time.sleep(3)
+    winsound.PlaySound('typewriter.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+    typewriter(commands, 0.02)
+    winsound.PlaySound(None, winsound.SND_ASYNC)
+    time.sleep(2)
+    
+    wins = 0
+    loss = 0
+    while wins <= loss:
+        list_of_asteroids = []
+        list_of_velocity = []
+        for i in range(len(neowrequest['near_earth_objects'][date])):
+            list_of_asteroids.append(neowrequest['near_earth_objects'][date][i]['name'])
+            list_of_velocity.append(neowrequest['near_earth_objects'][date][i]['close_approach_data'][0]['relative_velocity']['miles_per_hour'])
+            
+        
+        middle_of_asteroid_list = int(len(list_of_asteroids)/2)
+        ai_list_of_asteroids = list_of_asteroids[:middle_of_asteroid_list]
+        players_list_of_asteroids = list_of_asteroids[middle_of_asteroid_list:]
+        
+        middle_of_velocity_list = int(len(list_of_velocity)/2)
+        ai_list_of_velocity = list_of_velocity[:middle_of_velocity_list]
+        players_list_of_velocity = list_of_velocity[middle_of_velocity_list:]
+        
+        input("\nPress enter to continue ...\n")
+        while True:
+            chamber=[]
+            
+            print(f'Asteroid Ammo list: {players_list_of_asteroids}')
+            print(f'Chamber : {chamber}')
+            print(f'Total domination : {wins}')
+            move = input("Make the next move >>")
+            move = move.lower().split(" ", 1)
+            if move[0] == 'get':
+                if len(chamber) != 0:
+                    print('Only one asteroid can be loaded at a time...')
+                elif len(chamber) == 0 and move[1] in players_list_of_asteroids:
+                    chamber.append(move[1])
+                    print('Asteroid loaded')
+            elif move[0] == 'shoot':
+                if len(chamber) == 0:
+                    print('Asteroids not loaded yet...')
+                elif move[1] in chamber:
+                    v1 = players_list_of_velocity[players_list_of_asteroids.index(move[1])]
+                    v2 = ai_list_of_velocity[0]
+                    print('Shot fired !!')
+                    print(f'Your asteroid {move[1]}, travelled {v1} miles per hour')
+                    print(f'{ai_list_of_asteroids[0]}, travelled {v2} miles per hour')
+                    
+                    if(int(v1) > int(v2)):
+                        wins +=1
+                        print("You smashed the asteroid in space. Great work")
+                    elif(int(v1) < int(v2)):
+                        loss +=1
+                        print("Asteroid reached hit Feeser Residence on earth")
+                    else:
+                        print("Asses reached the earth's atmosphere")
+                        
+                    
+                    #remove from chamber
+                    chamber.pop(0)
+                    #remove from velocity list
+                    players_list_of_velocity.remove(players_list_of_asteroids.index(move[1]))
+                    #remove from asteriod list
+                    players_list_of_asteroids.remove(move[1])
+                    ai_list_of_velocity.pop(0)
+                    ai_list_of_asteroids.pop(0)
+                    if len(ai_list_of_asteroids) == 0:
+                        break
+            else:
+                print('Doesn\'t seem to work !!')           
+        
+def generate_date():
+     year =  str(random.randint(1900,2021))
+     #year_twodigit = year[2:-1]
+     month = str(random.randint(1,12)).zfill(2)
+     day = str(random.randint(1,31)).zfill(2)
+     try:
+         datetime.datetime(int(year), int(month), int(day))
+         return f'{year}-{month}-{day}'
+         #print(f'{year}-{month}-{day} is valid')
+     except ValueError:
+         generate_date()
+         #print(f'{year}-{month}-{day} is invalid')
 
 # Replace RPG starter project with this code when new instructions are live
 def typewriter(message,delay=0.01):
@@ -30,7 +162,10 @@ def showInstructions():
                                  =============
         ''')
     objective_message = ('''
-Intelligence Report says that Subash Residence is being used by Terrorist as their hide out spot. President is held hostage somewhere in the house. Your mission is to command your one man team to extract the hostage of high priority, and destroy the hide out. 
+Intelligence Report says that Feeser Residence is being used by Terrorist
+as their hide out spot. President is held hostage somewhere in the house.
+Your mission is to command your one man team to extract the hostage of high 
+priority, and destroy the hide out. 
 =============================================================================
 ''')
     command_message = (''' 
@@ -57,7 +192,7 @@ Intelligence Report says that Subash Residence is being used by Terrorist as the
                                 Goodluck !!''')
     time.sleep(1)
     print('')
-    winsound.PlaySound('mi-beat', winsound.SND_ASYNC | winsound.SND_LOOP)
+    #winsound.PlaySound('mi-beat', winsound.SND_ASYNC | winsound.SND_LOOP)
     
 def showStatus(number_of_lives, number_of_moves, currentRoom, inventory):
     #print the player's current status
@@ -202,7 +337,32 @@ rooms = {
                },
             'Pantry' : {
                   'south' : 'Dining Room',
-                  'item' : {'cookie dough':'', 'raw noodles':'', 'expired chips':'','opened': False},
+                  'east' : 'Cliff',
+                  'item' : {
+                      'cookie' :{
+                          'grabbable': True
+                          },
+                      'door':{
+                          'east metal door':{
+                              'content': 'a tunnel. It\'s Dark',
+                              'impact':'0',
+                              'opened':False,
+                              'grabbable':False,
+                              'dependency': 'passcode',
+                              'hostile': False
+                              }
+                          },
+                      'mystery box':{
+                              'shiny rock':{
+                                  'grabbable': True
+                                  },
+                              'opened': False,
+                              'impact': '0',
+                              'grabbable' : False
+                              },
+                      
+                      },
+                  
             }
          }
 timer_off = False
@@ -237,7 +397,7 @@ def openIt(currentRoom, elem, inventory, number_of_lives):
             items['door']['opened'] = True
             print("You found " + str(visibleItems))
             print("One of these doors have passcode to get out of this room")
-            print("There are some surprises too. Be very careful..")
+            print("There might be some surprises too. Be very careful..")
             
             return 0
         else:
@@ -317,6 +477,9 @@ def get(currentRoom, elem, inventory):
                 print(elem + ' got!')
                 #delete the item from the room
                 del items['mystery box'][elem]
+                if elem =='shiny rock':
+                    openWormHole()
+                    
         else:
             print('Can\'t get ' + elem + '!')
     else:
