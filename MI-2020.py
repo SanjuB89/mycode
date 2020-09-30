@@ -17,7 +17,7 @@ import winsound
 #from playsound import playsound
 #import keyboard
 
-def openWormHole():
+def openWormHole(number_of_lives, number_of_moves):
     
     ## Define NEOW URL 
     NEOURL = "https://api.nasa.gov/neo/rest/v1/feed?"
@@ -32,7 +32,7 @@ def openWormHole():
         #print(neowrequest)
         
     message ='''
-Oh no!! You opened a wormhole and you got sucked into it . . . . 
+Oh no!! You opened a wormhole . . . . 
 You are as of now sitting back and relaxing . . . .
 In front of you, you see a big ball . . . .
 It is planet earth . . . .
@@ -77,56 +77,67 @@ Choose and shoot wisely . . . .
             list_of_asteroids.append(neowrequest['near_earth_objects'][date][i]['name'])
             list_of_velocity.append(neowrequest['near_earth_objects'][date][i]['close_approach_data'][0]['relative_velocity']['miles_per_hour'])
             
-        
+        # player getting ammo
         middle_of_asteroid_list = int(len(list_of_asteroids)/2)
         ai_list_of_asteroids = list_of_asteroids[:middle_of_asteroid_list]
         players_list_of_asteroids = list_of_asteroids[middle_of_asteroid_list:]
         
+        #AI getting ammo
         middle_of_velocity_list = int(len(list_of_velocity)/2)
         ai_list_of_velocity = list_of_velocity[:middle_of_velocity_list]
         players_list_of_velocity = list_of_velocity[middle_of_velocity_list:]
         
         input("\nPress enter to continue ...\n")
+        chamber=[]
         while True:
-            chamber=[]
-            
+            number_of_moves +=1
+            if number_of_moves/10 == number_of_lives:
+                print("Terrorists have discovered your movements. Hostages are killed and you are fired..!! ")
+                break
             print(f'Asteroid Ammo list: {players_list_of_asteroids}')
             print(f'Chamber : {chamber}')
             print(f'Total domination : {wins}')
             move = input("Make the next move >>")
             move = move.lower().split(" ", 1)
-            if move[0] == 'get':
+            print(move[1])
+            if move[0] == 'load':
                 if len(chamber) != 0:
                     print('Only one asteroid can be loaded at a time...')
-                elif len(chamber) == 0 and move[1] in players_list_of_asteroids:
-                    chamber.append(move[1])
-                    print('Asteroid loaded')
+                else:
+                    if move[1].upper() in players_list_of_asteroids:
+                        chamber.append(move[1].upper())
+                        print('Asteroid loaded')
             elif move[0] == 'shoot':
                 if len(chamber) == 0:
                     print('Asteroids not loaded yet...')
-                elif move[1] in chamber:
-                    v1 = players_list_of_velocity[players_list_of_asteroids.index(move[1])]
+                elif move[1].upper() in chamber:
+                    v1 = players_list_of_velocity[players_list_of_asteroids.index(move[1].upper())]
                     v2 = ai_list_of_velocity[0]
                     print('Shot fired !!')
+                    winsound.PlaySound('Asteroid_Launch.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
+                    time.sleep(2)
+                    winsound.PlaySound(None, winsound.SND_ASYNC)
                     print(f'Your asteroid {move[1]}, travelled {v1} miles per hour')
                     print(f'{ai_list_of_asteroids[0]}, travelled {v2} miles per hour')
                     
-                    if(int(v1) > int(v2)):
+                    if(float(v1) > float(v2)):
+                        winsound.PlaySound('Explosion.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
+                        time.sleep(2)
+                        winsound.PlaySound(None, winsound.SND_ASYNC)
                         wins +=1
                         print("You smashed the asteroid in space. Great work")
-                    elif(int(v1) < int(v2)):
+                    elif(float(v1) < float(v2)):
                         loss +=1
-                        print("Asteroid reached hit Feeser Residence on earth")
+                        print("Asteroid reached Feeser Residence on earth")
                     else:
                         print("Asses reached the earth's atmosphere")
                         
-                    
                     #remove from chamber
                     chamber.pop(0)
                     #remove from velocity list
-                    players_list_of_velocity.remove(players_list_of_asteroids.index(move[1]))
+                    players_list_of_velocity.pop(players_list_of_asteroids.index(move[1].upper()))
                     #remove from asteriod list
-                    players_list_of_asteroids.remove(move[1])
+                    players_list_of_asteroids.remove(move[1].upper())
                     ai_list_of_velocity.pop(0)
                     ai_list_of_asteroids.pop(0)
                     if len(ai_list_of_asteroids) == 0:
@@ -213,8 +224,6 @@ def showStatus(number_of_lives, number_of_moves, currentRoom, inventory):
 def uSee(currentRoom):
     print('You see ' + str(list(rooms[currentRoom]['item'])))
     
-
-
 #a dictionary linking a room to other rooms
 ## A dictionary linking a room to other rooms
 rooms = {
@@ -413,6 +422,12 @@ def openIt(currentRoom, elem, inventory, number_of_lives):
                 if items['door'][elem]['content'] == 'passcode':
                     inventory += [items['door'][elem]['content']]
                     return 0
+                if elem == 'east door':
+                    winsound.PlaySound('T-Rex.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
+                    time.sleep(2)
+                    winsound.PlaySound('PsychoScream.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
+                    time.sleep(5)
+                    winsound.PlaySound(None, winsound.SND_ASYNC)
                 if items['door'][elem]['hostile'] == True:
                     print('shoot, shoot !!')
                     timer.start()
@@ -451,7 +466,7 @@ def go(currentRoom, elem):
          #there is no door (link) to the new room
      else:
             print('You can\'t go that way!')
-def get(currentRoom, elem, inventory):
+def get(currentRoom, elem, inventory, number_of_lives, number_of_moves):
     items = rooms[currentRoom]['item']
     #if the room contains an item, and the item is the one they want to get
     if "item" in rooms[currentRoom]: 
@@ -478,7 +493,7 @@ def get(currentRoom, elem, inventory):
                 #delete the item from the room
                 del items['mystery box'][elem]
                 if elem =='shiny rock':
-                    openWormHole()
+                    openWormHole(number_of_lives, number_of_moves)
                     
         else:
             print('Can\'t get ' + elem + '!')
@@ -528,7 +543,7 @@ def main():
         # get golden key is returned ["get", "golden key"]          
         move = move.lower().split(" ", 1)
         
-        items = rooms[currentRoom]['item']
+        #items = rooms[currentRoom]['item']
         
         impact = 0
         #if they type 'open' first
@@ -545,7 +560,7 @@ def main():
     
         #if they type 'get' first
         if move[0] == 'get' :
-            get(currentRoom, move[1], inventory)
+            get(currentRoom, move[1], inventory, number_of_lives, number_of_moves)
         
         if move[0] == 'shoot':
             #detect_hostile = dict()
