@@ -357,7 +357,7 @@ rooms = {
                               'impact':'0',
                               'opened':False,
                               'grabbable':False,
-                              'dependency': 'passcode',
+                              'dependency': 'passcod',
                               'hostile': False
                               }
                           },
@@ -519,9 +519,11 @@ def main():
         showStatus(number_of_lives, number_of_moves, currentRoom, inventory)
         
         #10 moves is equal to 1 life lost
-        if number_of_moves/10 == number_of_lives:
+        if number_of_moves/10 == 3:
             print("Terrorists have discovered your movements. Hostages are killed and you are fired..!! ")
             break
+        if number_of_moves != 0 and number_of_moves % 10 == 0:
+            number_of_lives -=1
         if number_of_lives <= 0:
             winsound.PlaySound(None, winsound.SND_ASYNC)
             print("Mission failed...")
