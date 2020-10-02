@@ -6,7 +6,7 @@ Created on Thu Sep 24 09:48:10 2020
 """
 
 #!/usr/bin/python3
-
+import sys
 import time
 import datetime
 import threading
@@ -14,8 +14,30 @@ import requests
 import random
 #import sys
 import winsound
+#import eye_tracker
 #from playsound import playsound
 #import keyboard
+
+# =============================================================================
+# def keepYourEyesOpen():
+#     input("Press enter to start your 30secs ")
+#     blink_count = eye_tracker.main()
+#     return blink_count
+# =============================================================================
+# =============================================================================
+#     if blink_count < 10:
+#         return 0
+#     else:
+#         return 1
+# =============================================================================
+    
+# =============================================================================
+# def eyeTrackerTime():
+#     global eye_tracker_timer_off
+#     eye_tracker_timer_off =True    
+# timer2 = threading.timer(30.0, eyeTrackerTime) 
+# eye_tracker_timer_off = False
+# =============================================================================
 
 def openWormHole(number_of_lives, number_of_moves):
     
@@ -301,7 +323,7 @@ rooms = {
                               'opened': False,
                               'grabbable': False,
                               'dependency': 'step ladder',
-                              'hostile' : 'True'
+                              'hostile' : 'False'
                               },
                           'west attic door': {
                               'content':'explosives. Got triggered and exploded',
@@ -353,16 +375,22 @@ rooms = {
                           },
                       'door':{
                           'east metal door':{
-                              'content': 'a tunnel. It\'s Dark',
+                              'content': 'a tunnel. You found President tied up on a chair',
                               'impact':'0',
-                              'opened':False,
-                              'grabbable':False,
-                              'dependency': 'passcod',
+                              'opened': False,
+                              'grabbable': False,
+                              'dependency': 'passcode',
                               'hostile': False
-                              }
+                              },
+                          'opened': False,
+                          'impact': '0',
+                          'grabbable' :'False'
                           },
                       'mystery box':{
                               'shiny rock':{
+                                  'grabbable': True
+                                  },
+                              'passcode': {
                                   'grabbable': True
                                   },
                               'opened': False,
@@ -371,17 +399,75 @@ rooms = {
                               },
                       
                       },
-                  
+            
+                },
+            'Cliff': {
+                  'west' : 'Pantry',
+                  'item': {
+                      'trees':{
+                          'grabbable' : False
+                          }, 
+                      'waterfall':{
+                          'grabbable' : False
+                          }, 
+                      'mystery box': {
+                          'grabbable' : False,
+                          'opened': False,
+                          'impact': '0',
+                          'grabbable' : False
+                          }
+                      },
+                  'opened': False,
+                  'impact': '0',
+                  'grabbable' : False
             }
          }
-timer_off = False
+
 def hostileAttack():
     print('You just got shot....Focus !!')
     global timer_off
     timer_off = True
-    
 timer = threading.Timer(5.0, hostileAttack) 
+timer_off = False
 
+#final countdown
+def rush_hour():
+    global final_timer_off
+    final_timer_off = True
+
+president_extracted = False
+
+def finalStage():
+    
+    message1 = ('''
+You have succesfully extracted the President.... ''')
+    message2=('''
+Ah ohhh! There was a booby trap set up for the intruiders.....
+You stepped on one of the landmines...
+
+You have 15 secs as soon as you take your foot off of it.....
+Move and setup your extraction point in the middle of the Garden....
+          ''')
+    global president_extracted
+    president_extracted = True
+    time.sleep(2)
+    winsound.PlaySound('typewriter.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+    typewriter(message1, 0.02)
+    time.sleep(2)
+    winsound.PlaySound('typewriter.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+    typewriter(message2, 0.02)
+    time.sleep(2)
+    winsound.PlaySound('suspense_sound.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+
+    time.sleep(2)
+    input("Hit enter to take off your foot .....")
+    winsound.PlaySound(None, winsound.SND_ASYNC)
+    final_timer.start()
+    
+    
+final_timer = threading.Timer(15.0, rush_hour)
+final_timer_off = False
+ 
 #open objects and prints the content
 def openIt(currentRoom, elem, inventory, number_of_lives):
     items = rooms[currentRoom]['item']
@@ -410,7 +496,7 @@ def openIt(currentRoom, elem, inventory, number_of_lives):
             
             return 0
         else:
-            print("Choose east door, west door or south door..")
+            print(f"Choose : {visibleItems}")
             return 0
     elif items['door']['opened'] == True and elem in items['door'].keys():
         visibleItems = list(items['door'].keys())[0:N]
@@ -419,6 +505,7 @@ def openIt(currentRoom, elem, inventory, number_of_lives):
             if items['door'][elem]['dependency'] in inventory:
                 items['door'][elem]['opened'] = True
                 print("You found " + str(items['door'][elem]['content']))
+                
                 if items['door'][elem]['content'] == 'passcode':
                     inventory += [items['door'][elem]['content']]
                     return 0
@@ -433,19 +520,44 @@ def openIt(currentRoom, elem, inventory, number_of_lives):
                     timer.start()
                     action = input("Type shoot to shoot >> ")
                     if timer_off == True:
+                        winsound.PlaySound('m4_enemy.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
+                        time.sleep(3)
+                        winsound.PlaySound(None, winsound.SND_ASYNC)
                         return items['door'][elem]['impact']
                     elif action == 'shoot' and timer_off==False:
                         if 'm4' in inventory:
                             timer.cancel()
+                            winsound.PlaySound('m4_sound.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
+                            time.sleep(3)
+                            winsound.PlaySound(None, winsound.SND_ASYNC)
                             print('Threats elimininated.. Great Work')
                             return 0
                         else:
+                            print("Where's your damn weapon ?")
                             return items['door'][elem]['impact']
                     else:
                         print("Unlucky day")
                         return items['door'][elem]['impact']
+                if elem == 'east metal door':
+                    #tunnel_result = 
+                    #keepYourEyesOpen()
+                    finalStage()
+                    return 0
+                elif elem == 'east attic door':
+                    winsound.PlaySound('snake_hiss.wav', winsound.SND_ASYNC | winsound.SND_ASYNC)
+                    time.sleep(2)
+                    winsound.PlaySound('snake_attack.wav', winsound.SND_ASYNC | winsound.SND_ASYNC)
+                    time.sleep(3)
+                    winsound.PlaySound(None, winsound.SND_ASYNC)
+                    return items['door'][elem]['impact']
+                elif elem == 'west attic door':
+                    winsound.PlaySound('explosion1.wav', winsound.SND_ASYNC | winsound.SND_ASYNC)
+                    time.sleep(3)
+                    winsound.PlaySound(None, winsound.SND_ASYNC)
+                    return items['door'][elem]['impact']
                 else:
                     return items['door'][elem]['impact']
+                
             else:
                 print('Personal inventory missing tool')
                 return items['door']['impact']
@@ -466,6 +578,7 @@ def go(currentRoom, elem):
          #there is no door (link) to the new room
      else:
             print('You can\'t go that way!')
+            return currentRoom
 def get(currentRoom, elem, inventory, number_of_lives, number_of_moves):
     items = rooms[currentRoom]['item']
     #if the room contains an item, and the item is the one they want to get
@@ -506,12 +619,15 @@ def main():
     #start the player in the Hall
     currentRoom = 'Hall'
     #visibleItems = rooms[currentRoom]['item']
-
+    
+    global president_extracted 
+    president_extracted = False
+    
     showInstructions()
     
     #an inventory, which is initially empty
     inventory = []
-
+    
     number_of_moves = 0
     number_of_lives = 3  
     #loop forever
@@ -521,6 +637,10 @@ def main():
         #10 moves is equal to 1 life lost
         if number_of_moves/10 == 3:
             print("Terrorists have discovered your movements. Hostages are killed and you are fired..!! ")
+            time.sleep(2)
+            winsound.PlaySound('m4_sound.wav', winsound.SND_ASYNC | winsound.SND_ALIAS)
+            time.sleep(3)
+            winsound.PlaySound(None, winsound.SND_ASYNC)
             break
         if number_of_moves != 0 and number_of_moves % 10 == 0:
             number_of_lives -=1
@@ -579,22 +699,30 @@ def main():
                     number_of_lives -=1
             else:
                 print("Have you lost your mind ?!!")
+                
         ## Define how a player can win
-        if currentRoom == 'Garden' and 'key' in inventory and 'potion' in inventory:
-            print('You escaped the house with the ultra rare key and magic potion... YOU WIN!')
+        if currentRoom == 'Garden' and president_extracted == True and final_timer_off==False:
+            final_timer.cancel()
+            showStatus(number_of_lives, number_of_moves, currentRoom, inventory)
+            winsound.PlaySound('rain.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+            time.sleep(13)
+            winsound.PlaySound('helicoptor.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+            time.sleep(20)
+            winsound.PlaySound(None, winsound.SND_LOOP)
+            print("Extraction complete.. Mission Accomplished !!")
             break
-    
-        ## If a player enters a room with a monster BUT HAS A COOKIE
-        if 'item' in rooms[currentRoom] and 'monster' in rooms[currentRoom]['item'] and 'cookie' in inventory:
-            print('The monster takes your cookie and runs away! Whew!')
-            del rooms[currentRoom]['item']
-            inventory.remove('cookie')
-    
-        ## If a player enters a room with a monster
-        elif 'item' in rooms[currentRoom] and 'monster' in rooms[currentRoom]['item']:
-            print('A monster has got you... GAME OVER!')
-            break
-
+        if final_timer_off == True:
+            winsound.PlaySound('explosion1.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+            time.sleep(3)
+            winsound.PlaySound('explosion2.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+            time.sleep(3)
+            winsound.PlaySound('explosion1.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+            time.sleep(3)
+            winsound.PlaySound('explosion2.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+            time.sleep(3)
+            winsound.PlaySound(None, winsound.SND_LOOP)
+            print('Mission failed')
+            number_of_lives=0
 if __name__ == '__main__': 
     main()
     winsound.PlaySound(None, winsound.SND_PURGE)

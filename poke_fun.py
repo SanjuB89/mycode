@@ -27,7 +27,7 @@ def api_slice(json2python):
 
 def wget_pic(pic):
     
-    wget.download(pic, 'C:/Users/sanju/Documents/TLG_python/mycode/static/poke_pic.png')
+    wget.download(pic, 'C:/Users/sanju/Documents/TLG_python/mycode/static/')
     
 
 def main():
